@@ -1,0 +1,97 @@
+import random
+
+# Function to print the Tic-Tac-Toe board
+def print_board(board):
+    for row in board:
+        print('|'.join(row))
+        print('-----')
+
+# Function to check if a player has won the game
+def check_winner(board, player):
+    # Check rows
+    for row in board:
+        if all(cell == player for cell in row):
+            return True
+    # Check columns
+    for col in range(3):
+        if all(board[row][col] == player for row in range(3)):
+            return True
+    # Check diagonals
+    if all(board[i][i] == player for i in range(3)) or all(board[i][2 - i] == player for i in range(3)):
+        return True
+    return False
+
+# Function to check if the board is full (draw)
+def is_board_full(board):
+    return all(all(cell != ' ' for cell in row) for row in board)
+
+# Function for AI's move (rule-based strategy)
+def ai_move(board):
+    # Check for winning move
+    for row in range(3):
+        for col in range(3):
+            if board[row][col] == ' ':
+                board[row][col] = 'O'
+                if check_winner(board, 'O'):
+                    return row, col
+                board[row][col] = ' '
+
+    # Check for blocking opponent's winning move
+    for row in range(3):
+        for col in range(3):
+            if board[row][col] == ' ':
+                board[row][col] = 'X'
+                if check_winner(board, 'X'):
+                    return row, col
+                board[row][col] = ' '
+
+    # Play center if available
+    if board[1][1] == ' ':
+        return 1, 1
+
+    # Play a random corner
+    corners = [(0, 0), (0, 2), (2, 0), (2, 2)]
+    random.shuffle(corners)
+    for corner in corners:
+        if board[corner[0]][corner[1]] == ' ':
+            return corner
+
+    # Play a random available cell
+    available_cells = [(row, col) for row in range(3) for col in range(3) if board[row][col] == ' ']
+    return random.choice(available_cells)
+
+# Main game loop
+def play_game():
+    board = [[' ' for _ in range(3)] for _ in range(3)]
+    print("Welcome to Tic-Tac-Toe!")
+    print_board(board)
+
+    while not is_board_full(board):
+        # Player's turn
+        row, col = map(int, input("Your turn (row[0-2] col[0-2]): ").split())
+        if board[row][col] == ' ':
+            board[row][col] = 'X'
+            print_board(board)
+            if check_winner(board, 'X'):
+                print("You won!")
+                return
+        else:
+            print("Cell already taken! Try again.")
+            continue
+
+        if is_board_full(board):
+            print("It's a draw!")
+            return
+
+        # AI's turn
+        print("AI's turn:")
+        ai_row, ai_col = ai_move(board)
+        board[ai_row][ai_col] = 'O'
+        print_board(board)
+        if check_winner(board, 'O'):
+            print("AI won!")
+            return
+
+# Start the game
+if __name__ == "__main__":
+    play_game()
