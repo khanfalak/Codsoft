@@ -1,7 +1,7 @@
 import cv2
 
 # Load the pre-trained Haar Cascade classifier for face detection
-face_cascade = cv2.CascadeClassifier('E:\\FALAK\\facerecog\\haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # Capture video from webcam
 cap = cv2.VideoCapture(0)
@@ -35,3 +35,5 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
+#use q to exit the window 
+#You'll find the saved images in the same directory where you're running the script
