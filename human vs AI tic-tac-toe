@@ -1,97 +1,112 @@
-import random
+import tkinter as tk
+import math
 
-# Function to print the Tic-Tac-Toe board
-def print_board(board):
-    for row in board:
-        print('|'.join(row))
-        print('-----')
+# Initialize the board and player markers
+board = [' '] * 9
+player_marker = 'X'
+ai_marker = 'O'
 
-# Function to check if a player has won the game
-def check_winner(board, player):
-    # Check rows
-    for row in board:
-        if all(cell == player for cell in row):
-            return True
-    # Check columns
-    for col in range(3):
-        if all(board[row][col] == player for row in range(3)):
-            return True
-    # Check diagonals
-    if all(board[i][i] == player for i in range(3)) or all(board[i][2 - i] == player for i in range(3)):
-        return True
-    return False
+# Check for a win
+def check_winner(player):
+    return (
+        (board[0] == board[1] == board[2] == player) or
+        (board[3] == board[4] == board[5] == player) or
+        (board[6] == board[7] == board[8] == player) or
+        (board[0] == board[3] == board[6] == player) or
+        (board[1] == board[4] == board[7] == player) or
+        (board[2] == board[5] == board[8] == player) or
+        (board[0] == board[4] == board[8] == player) or
+        (board[2] == board[4] == board[6] == player)
+    )
 
-# Function to check if the board is full (draw)
-def is_board_full(board):
-    return all(all(cell != ' ' for cell in row) for row in board)
+# Check for a draw
+def check_draw():
+    return ' ' not in board
 
-# Function for AI's move (rule-based strategy)
-def ai_move(board):
-    # Check for winning move
-    for row in range(3):
-        for col in range(3):
-            if board[row][col] == ' ':
-                board[row][col] = 'O'
-                if check_winner(board, 'O'):
-                    return row, col
-                board[row][col] = ' '
+# Get available moves
+def get_available_moves():
+    return [i for i, mark in enumerate(board) if mark == ' ']
 
-    # Check for blocking opponent's winning move
-    for row in range(3):
-        for col in range(3):
-            if board[row][col] == ' ':
-                board[row][col] = 'X'
-                if check_winner(board, 'X'):
-                    return row, col
-                board[row][col] = ' '
+# Minimax algorithm
+def minimax(board, depth, is_maximizing):
+    if check_winner(ai_marker):
+        return 1
+    elif check_winner(player_marker):
+        return -1
+    elif check_draw():
+        return 0
 
-    # Play center if available
-    if board[1][1] == ' ':
-        return 1, 1
+    if is_maximizing:
+        max_eval = -math.inf
+        for move in get_available_moves():
+            board[move] = ai_marker
+            eval = minimax(board, depth + 1, False)
+            board[move] = ' '
+            max_eval = max(max_eval, eval)
+        return max_eval
+    else:
+        min_eval = math.inf
+        for move in get_available_moves():
+            board[move] = player_marker
+            eval = minimax(board, depth + 1, True)
+            board[move] = ' '
+            min_eval = min(min_eval, eval)
+        return min_eval
 
-    # Play a random corner
-    corners = [(0, 0), (0, 2), (2, 0), (2, 2)]
-    random.shuffle(corners)
-    for corner in corners:
-        if board[corner[0]][corner[1]] == ' ':
-            return corner
+# Make AI move
+def make_ai_move():
+    best_move = None
+    best_eval = -math.inf
+    for move in get_available_moves():
+        board[move] = ai_marker
+        eval = minimax(board, 0, False)
+        board[move] = ' '
+        if eval > best_eval:
+            best_eval = eval
+            best_move = move
+    board[best_move] = ai_marker
+    buttons[best_move].config(text=ai_marker)
+    if check_winner(ai_marker):
+        result_label.config(text="AI wins!")
+        disable_buttons()
+    elif check_draw():
+        result_label.config(text="It's a draw!")
+        disable_buttons()
 
-    # Play a random available cell
-    available_cells = [(row, col) for row in range(3) for col in range(3) if board[row][col] == ' ']
-    return random.choice(available_cells)
+# Handle button click
+def on_button_click(idx):
+    if board[idx] == ' ':
+        buttons[idx].config(text=player_marker)
+        board[idx] = player_marker
 
-# Main game loop
-def play_game():
-    board = [[' ' for _ in range(3)] for _ in range(3)]
-    print("Welcome to Tic-Tac-Toe!")
-    print_board(board)
-
-    while not is_board_full(board):
-        # Player's turn
-        row, col = map(int, input("Your turn (row[0-2] col[0-2]): ").split())
-        if board[row][col] == ' ':
-            board[row][col] = 'X'
-            print_board(board)
-            if check_winner(board, 'X'):
-                print("You won!")
-                return
+        if check_winner(player_marker):
+            result_label.config(text="You win!")
+            disable_buttons()
+        elif check_draw():
+            result_label.config(text="It's a draw!")
+            disable_buttons()
         else:
-            print("Cell already taken! Try again.")
-            continue
+            make_ai_move()
 
-        if is_board_full(board):
-            print("It's a draw!")
-            return
+# Disable all buttons
+def disable_buttons():
+    for button in buttons:
+        button.config(state=tk.DISABLED)
 
-        # AI's turn
-        print("AI's turn:")
-        ai_row, ai_col = ai_move(board)
-        board[ai_row][ai_col] = 'O'
-        print_board(board)
-        if check_winner(board, 'O'):
-            print("AI won!")
-            return
+# Create the GUI
+root = tk.Tk()
+root.title("Tic-Tac-Toe")
 
-# Start the game
-if __name__ == "__main__":
-    play_game()
+buttons = []
+for i in range(9):
+    row = i // 3
+    col = i % 3
+    button = tk.Button(root, text=' ', font=('normal', 24), width=6, height=2,
+                       command=lambda idx=i: on_button_click(idx))
+    button.grid(row=row, column=col)
+    buttons.append(button)
+
+result_label = tk.Label(root, text='', font=('normal', 16))
+result_label.grid(row=3, columnspan=3)
+
+root.mainloop()
